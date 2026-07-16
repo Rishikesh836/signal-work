@@ -1,0 +1,86 @@
+// Default datasource is SQLite for zero-setup local dev.
+// To use Postgres (e.g. via docker-compose), change provider to "postgresql"
+// and point DATABASE_URL at your Postgres instance, then re-run `npm run db:migrate`.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Lead {
+  id            String   @id @default(cuid())
+  company       String
+  contact       String?
+  designation   String?
+  email         String?
+  phone         String?
+  profileUrl    String?
+  sourceUrl     String?
+  industry      String?
+  source        String?
+  signals       String   @default("[]") // JSON-encoded string array
+  tier          String   @default("B")
+  status        String   @default("Researched")
+  nextFollowUp  DateTime?
+  channel       String?
+  offering      String?
+  orgId         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  contacts      Contact[]
+  interactions  Interaction[]
+  drafts        Draft[]
+}
+
+model Contact {
+  id          String  @id @default(cuid())
+  leadId      String
+  role        String
+  name        String
+  designation String?
+  email       String?
+  phone       String?
+  profileUrl  String?
+  sortOrder   Int     @default(0)
+
+  lead    Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  drafts  Draft[]
+  interactions Interaction[]
+}
+
+model Interaction {
+  id        String   @id @default(cuid())
+  leadId    String
+  contactId String?
+  type      String
+  content   String?
+  tone      String?
+  createdAt DateTime @default(now())
+
+  lead    Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  contact Contact? @relation(fields: [contactId], references: [id])
+}
+
+model Draft {
+  id              String   @id @default(cuid())
+  leadId          String
+  targetContactId String?
+  tone            String
+  subject         String
+  body            String
+  createdAt       DateTime @default(now())
+
+  lead          Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  targetContact Contact? @relation(fields: [targetContactId], references: [id])
+}

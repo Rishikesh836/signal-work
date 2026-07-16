@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm audit *)",
+      "Bash(cp apps/api/.env.example apps/api/.env)",
+      "Bash(npm run *)"
+    ]
+  }
+}
