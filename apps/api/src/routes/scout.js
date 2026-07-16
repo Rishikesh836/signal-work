@@ -8,7 +8,7 @@ const router = Router();
 
 router.post("/", validateBody(["query"]), async (req, res, next) => {
   try {
-    const results = await scoutLeads(req.body.query);
+    const results = await scoutLeads(req.body.query, req.body.platforms, req.body.timeRange, req.body.resultCount);
     res.json({ results });
   } catch (err) {
     next(err);

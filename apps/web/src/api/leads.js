@@ -71,8 +71,8 @@ export async function downloadLeadsCsv() {
   URL.revokeObjectURL(url);
 }
 
-export function scoutSearch(query) {
-  return request("/scout", { method: "POST", body: { query } });
+export function scoutSearch(query, platforms, timeRange, resultCount) {
+  return request("/scout", { method: "POST", body: { query, platforms, timeRange, resultCount } });
 }
 
 export function scoutAccept(result) {

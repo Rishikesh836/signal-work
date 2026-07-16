@@ -4,6 +4,7 @@ import { generateDrafts, addInteraction } from "../../api/leads.js";
 import { DraftTonePicker } from "./DraftTonePicker.jsx";
 import { HierarchyNudge } from "./HierarchyNudge.jsx";
 import { CopyButton } from "../shared/CopyButton.jsx";
+import { OfferingPicker } from "../leads/OfferingPicker.jsx";
 
 export function Composer({ lead, contacts, onLogged }) {
   const sortedContacts = useMemo(
@@ -12,7 +13,9 @@ export function Composer({ lead, contacts, onLogged }) {
   );
 
   const [targetContactId, setTargetContactId] = useState("");
-  const [offeringId, setOfferingId] = useState(lead.offering || OFFERINGS[0].id);
+  const [offerings, setOfferings] = useState(
+    lead.offerings?.length ? lead.offerings : [{ ...OFFERINGS[0], custom: false }]
+  );
   const [drafts, setDrafts] = useState(null);
   const [nudge, setNudge] = useState(null);
   const [tone, setTone] = useState("formal");
@@ -28,7 +31,7 @@ export function Composer({ lead, contacts, onLogged }) {
     setDrafts(null);
     setCopied(false);
     try {
-      const result = await generateDrafts(lead.id, { targetContactId: targetContactId || undefined, offeringId });
+      const result = await generateDrafts(lead.id, { targetContactId: targetContactId || undefined, offerings });
       const byTone = Object.fromEntries(result.drafts.map((d) => [d.tone, d]));
       setDrafts(byTone);
       setNudge(result.nudge);
@@ -70,12 +73,9 @@ export function Composer({ lead, contacts, onLogged }) {
         ))}
       </select>
 
-      <label>Offering</label>
-      <select value={offeringId} onChange={(e) => setOfferingId(e.target.value)}>
-        {OFFERINGS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-      </select>
+      <OfferingPicker value={offerings} onChange={setOfferings} />
 
-      <button className="btn" style={{ marginTop: 16 }} onClick={handleGenerate} disabled={loading}>
+      <button className="btn" style={{ marginTop: 16 }} onClick={handleGenerate} disabled={loading || offerings.length === 0}>
         {loading ? "Generating…" : "Generate drafts"}
       </button>
 

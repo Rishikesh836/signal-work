@@ -9,7 +9,7 @@ const router = Router();
 
 router.post("/:id/drafts", async (req, res, next) => {
   try {
-    const { targetContactId, offeringId } = req.body || {};
+    const { targetContactId, offerings } = req.body || {};
 
     const lead = await prisma.lead.findUnique({
       where: { id: req.params.id },
@@ -23,8 +23,9 @@ router.post("/:id/drafts", async (req, res, next) => {
       if (!targetContact) throw new HttpError(400, "targetContactId does not belong to this lead");
     }
 
-    const resolvedOffering = OFFERINGS.find((o) => o.id === offeringId)?.id || OFFERINGS[0].id;
-    const variants = await generateDraftVariants({ lead, targetContact, offeringId: resolvedOffering });
+    const resolvedOfferings = (Array.isArray(offerings) && offerings.length ? offerings : OFFERINGS.slice(0, 1))
+      .map((o) => ({ name: o.name, outcome: o.outcome }));
+    const variants = await generateDraftVariants({ lead, targetContact, offerings: resolvedOfferings });
 
     const created = await Promise.all(
       Object.entries(variants).map(([tone, { subject, body }]) =>

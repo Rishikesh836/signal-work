@@ -7,9 +7,11 @@ import { ROLE_RANK } from "@signalwork/shared";
 const router = Router();
 
 function serializeLead(lead) {
+  const { offering, ...rest } = lead;
   return {
-    ...lead,
+    ...rest,
     signals: JSON.parse(lead.signals || "[]"),
+    offerings: JSON.parse(offering || "[]"),
     contacts: (lead.contacts || [])
       .slice()
       .sort((a, b) => (ROLE_RANK[a.role] ?? 99) - (ROLE_RANK[b.role] ?? 99)),
@@ -86,7 +88,7 @@ router.post("/", validateBody(["company"]), async (req, res, next) => {
         status: b.status ?? "Researched",
         nextFollowUp: b.nextFollowUp ? new Date(b.nextFollowUp) : null,
         channel: b.channel ?? null,
-        offering: b.offering ?? null,
+        offering: JSON.stringify(b.offerings ?? []),
       },
       include: { contacts: true },
     });
@@ -115,11 +117,12 @@ router.patch("/:id", async (req, res, next) => {
     const data = {};
     for (const field of [
       "company", "contact", "designation", "email", "phone", "profileUrl",
-      "sourceUrl", "industry", "source", "tier", "status", "channel", "offering",
+      "sourceUrl", "industry", "source", "tier", "status", "channel",
     ]) {
       if (b[field] !== undefined) data[field] = b[field];
     }
     if (b.signals !== undefined) data.signals = JSON.stringify(b.signals);
+    if (b.offerings !== undefined) data.offering = JSON.stringify(b.offerings);
     if (b.nextFollowUp !== undefined) {
       data.nextFollowUp = b.nextFollowUp ? new Date(b.nextFollowUp) : null;
     }

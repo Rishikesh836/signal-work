@@ -1,7 +1,13 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { OFFERINGS } from "@signalwork/shared";
 
 const prisma = new PrismaClient();
+
+function offeringField(id) {
+  const offering = OFFERINGS.find((o) => o.id === id);
+  return JSON.stringify(offering ? [{ ...offering, custom: false }] : []);
+}
 
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 10);
@@ -23,7 +29,7 @@ async function main() {
       signals: JSON.stringify(["Posted a plant reliability engineer role"]),
       tier: "A",
       status: "Contacted",
-      offering: "predictive-maintenance",
+      offering: offeringField("predictive-maintenance"),
       contacts: {
         create: [
           { role: "Recruiter", name: "Priya Nair", email: "priya.nair@northfieldmfg.example.com", sortOrder: 0 },
@@ -41,7 +47,7 @@ async function main() {
       signals: JSON.stringify(["Announced digital lending transformation initiative"]),
       tier: "A",
       status: "Meeting Booked",
-      offering: "risk-underwriting",
+      offering: offeringField("risk-underwriting"),
       contacts: {
         create: [
           { role: "HR / Talent", name: "Grace Lin", sortOrder: 0 },
@@ -58,7 +64,7 @@ async function main() {
       signals: JSON.stringify(["Hiring for outage response automation"]),
       tier: "B",
       status: "Researched",
-      offering: "grid-ops-copilot",
+      offering: offeringField("grid-ops-copilot"),
     },
     {
       company: "Ironclad Sports Group",
@@ -69,7 +75,7 @@ async function main() {
       signals: JSON.stringify(["Season ticket renewal rates declining"]),
       tier: "C",
       status: "Researched",
-      offering: "fan-engagement-ai",
+      offering: offeringField("fan-engagement-ai"),
     },
   ];
 

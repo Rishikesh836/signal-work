@@ -31,27 +31,31 @@ async function callGroqJson(systemPrompt, userPrompt) {
   return JSON.parse(content);
 }
 
-function mockDrafts(lead, targetContact, offering, caseStudy) {
+function mockDrafts(lead, targetContact, offerings, caseStudy) {
   const salutation = targetContact?.name ? `Hi ${targetContact.name.split(" ")[0]}` : "Hi there";
   const signal = (JSON.parse(lead.signals || "[]"))[0] || "a recent signal at your company";
-  const base = `${salutation},\n\nNoticed ${signal} at ${lead.company} — that's often the moment ${offering.name} pays off (${offering.outcome}). ${caseStudy.summary}\n\nWorth a quick chat?`;
+  const [primary, ...rest] = offerings;
+  const alsoHelps = rest.length
+    ? ` We can also help with ${rest.map((o) => o.name).join(", ")}.`
+    : "";
+  const base = `${salutation},\n\nNoticed ${signal} at ${lead.company} — that's often the moment ${primary.name} pays off (${primary.outcome}).${alsoHelps} ${caseStudy.summary}\n\nWorth a quick chat?`;
   return {
-    formal: { subject: `${offering.name} for ${lead.company}`, body: `[MOCK - set GROQ_API_KEY for real drafts]\n\n${base}\n\nBest regards,\nSignalwork` },
+    formal: { subject: `${primary.name} for ${lead.company}`, body: `[MOCK - set GROQ_API_KEY for real drafts]\n\n${base}\n\nBest regards,\nSignalwork` },
     consultative: { subject: `A thought on ${lead.company}'s ${lead.industry || "roadmap"}`, body: `[MOCK - set GROQ_API_KEY for real drafts]\n\n${base}\n\nHappy to share more if useful.` },
     brief: { subject: `Quick idea for ${lead.company}`, body: `[MOCK - set GROQ_API_KEY for real drafts]\n\n${base}` },
   };
 }
 
-export async function generateDraftVariants({ lead, targetContact, offeringId }) {
-  const offering = OFFERINGS.find((o) => o.id === offeringId) || OFFERINGS[0];
+export async function generateDraftVariants({ lead, targetContact, offerings }) {
+  const resolvedOfferings = offerings?.length ? offerings : [OFFERINGS[0]];
   const caseStudy = matchCaseStudy(lead.industry);
   const signals = JSON.parse(lead.signals || "[]");
 
   if (!env.groqApiKey) {
-    return mockDrafts(lead, targetContact, offering, caseStudy);
+    return mockDrafts(lead, targetContact, resolvedOfferings, caseStudy);
   }
 
-  const systemPrompt = `You are an outreach copywriter for an AI consulting firm. Generate 3 short outreach email drafts in different tones: formal, consultative, brief. Ground each draft in the lead's buying signal, the given case study, and the given offering. Return strict JSON: {"formal": {"subject": "...", "body": "..."}, "consultative": {"subject": "...", "body": "..."}, "brief": {"subject": "...", "body": "..."}}`;
+  const systemPrompt = `You are an outreach copywriter for an AI consulting firm. Generate 3 short outreach email drafts in different tones: formal, consultative, brief. Ground each draft in the lead's buying signal, the given case study, and the given offering(s) — lead with the first offering, and only briefly mention any additional ones. Return strict JSON: {"formal": {"subject": "...", "body": "..."}, "consultative": {"subject": "...", "body": "..."}, "brief": {"subject": "...", "body": "..."}}`;
 
   const userPrompt = JSON.stringify({
     company: lead.company,
@@ -60,7 +64,7 @@ export async function generateDraftVariants({ lead, targetContact, offeringId })
     targetContact: targetContact
       ? { name: targetContact.name, role: targetContact.role, designation: targetContact.designation }
       : null,
-    offering: { name: offering.name, outcome: offering.outcome },
+    offerings: resolvedOfferings.map((o) => ({ name: o.name, outcome: o.outcome })),
     caseStudy: { industry: caseStudy.industry, summary: caseStudy.summary },
   });
 
@@ -68,6 +72,6 @@ export async function generateDraftVariants({ lead, targetContact, offeringId })
     return await callGroqJson(systemPrompt, userPrompt);
   } catch (err) {
     console.error("Groq draft generation failed, falling back to mock:", err.message);
-    return mockDrafts(lead, targetContact, offering, caseStudy);
+    return mockDrafts(lead, targetContact, resolvedOfferings, caseStudy);
   }
 }

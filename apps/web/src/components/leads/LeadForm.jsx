@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { TIERS, STATUSES, OFFERINGS } from "../../constants.js";
+import { TIERS, STATUSES } from "../../constants.js";
+import { OfferingPicker } from "./OfferingPicker.jsx";
 
 const EMPTY = {
   company: "", contact: "", designation: "", email: "", phone: "",
   profileUrl: "", sourceUrl: "", industry: "", source: "",
-  tier: "B", status: "Researched", offering: "", signals: "",
+  tier: "B", status: "Researched", offerings: [], signals: "",
 };
 
 export function LeadForm({ initial, onSubmit, onCancel }) {
@@ -12,6 +13,7 @@ export function LeadForm({ initial, onSubmit, onCancel }) {
     ...EMPTY,
     ...initial,
     signals: initial?.signals ? initial.signals.join(", ") : "",
+    offerings: initial?.offerings ?? [],
   }));
 
   function update(field, value) {
@@ -68,11 +70,7 @@ export function LeadForm({ initial, onSubmit, onCancel }) {
         {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
       </select>
 
-      <label>Offering</label>
-      <select value={form.offering} onChange={(e) => update("offering", e.target.value)}>
-        <option value="">— none —</option>
-        {OFFERINGS.map((o) => <option key={o.id} value={o.id}>{o.name}</option>)}
-      </select>
+      <OfferingPicker value={form.offerings} onChange={(v) => update("offerings", v)} />
 
       <div style={{ marginTop: 20, display: "flex", gap: 8 }}>
         <button className="btn" type="submit">Save</button>
